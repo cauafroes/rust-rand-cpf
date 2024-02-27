@@ -1,5 +1,5 @@
 use clap::Parser;
-use rand::Rng;
+// use rand::Rng;
 
 #[derive(Parser)]
 struct Cli {
@@ -8,24 +8,41 @@ struct Cli {
 }
 
 fn main() {
-    let args = Cli::parse();
+    let last_digit = Cli::parse().last_digit.unwrap_or(0);
 
-    println!("Your last digit: {:?}", args.last_digit);
+    let mut cpf = cpf_gen();
 
-    let vals = cpf_gen();
-    println!("{:?}", vals);
+    while cpf[10] != last_digit as u16 {
+        cpf = cpf_gen();
+    }    
+
+    println!("{:?}", cpf);
 }
 
-fn cpf_gen() -> Vec<u8> {
+fn cpf_gen() -> Vec<u16> {
     let mut rng = rand::thread_rng();
-    let mut vals: Vec<u8> = (0..9).map(|_| rng.gen_range(0..9)).collect();
-    vals.push(get_digit(&vals, 2));
+    let mut vals: Vec<u16> = (0..9).map(|_| rng.gen_range(0..9)).collect();
+    
+    vals.push(get_digit(&vals, 1));
     vals.push(get_digit(&vals, 2));
 
     vals
 }
 
-fn get_digit(numbers: &Vec<u8>, digit: u8) -> u8 {
-    let multipliers: Vec<u8> = vec![10, 9, 8, 7, 6, 5, 4, 3, 2];
-    // numbers[0] + multiplier
+fn get_digit(numbers: &Vec<u16>, digit: u16) -> u16 {
+    let mut multipliers: Vec<u16> = vec![10, 9, 8, 7, 6, 5, 4, 3, 2];
+
+    if digit == 2 {
+        multipliers.insert(0, 11);
+    }
+
+    let result: Vec<u16> = numbers.iter().zip(multipliers.iter()).map(|(a, b)| a * b).collect();
+    let sum: u16 = result.iter().sum();
+    let rest: u16 = sum % 11;
+
+    if rest >= 2 {
+        return 11 - rest;
+    }
+
+    0
 }
